@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS CloudFormation template to create an IAM group'
+Parameters:
+  Password:
+    NoEcho: 'true'
+    Type: String
+    Description: password
+    MinLength: '1'
+    MaxLength: '41'
+    ConstraintDescription: the password must be between 1 and 41 characters
+Resources:
+  BluemoonUser:
+    Type: AWS::IAM::User
+    Properties:
+      LoginProfile:
+        Password: !Ref 'Password'
+  BluemoonUserGroup:
+    Type: AWS::IAM::Group
+  BluemoonAdminGroup:
+    Type: AWS::IAM::Group
+  Users:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: !Ref 'BluemoonUserGroup'
+      Users: [!Ref 'BluemoonUser']
+  Admins:
+    Type: AWS::IAM::UserToGroupAddition
+    Properties:
+      GroupName: !Ref 'BluemoonAdminGroup'
+      Users: [!Ref 'BluemoonUser']
+  BluemoonUserPolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: BluemoonUsers
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action: ['ec2:Describe*', 'ec2:List*', 'ec2:Get*']
+          Resource: '*'
+      Groups: [!Ref 'BluemoonUserGroup']
+  BluemoonAdminPolicies:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: BluemoonAdmins
+      PolicyDocument:
+        Statement:
+        - Effect: Allow
+          Action: ec2:*
+          Resource: '*'
+      Groups: [!Ref 'BluemoonAdminGroup']
+  BluemoonKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref 'BluemoonUser'
+Outputs:
+  AccessKey:
+    Value: !Ref 'BluemoonKeys'
+    Description: AWSAccessKeyId of new user
+  SecretKey:
+    Value: !GetAtt [BluemoonKeys, SecretAccessKey]
+    Description: AWSSecretKey of new user
